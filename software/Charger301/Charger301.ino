@@ -17,16 +17,18 @@ readVoltsAmps A2Volts(2,0); // instantiates class as object A2Volts on pin A2, 5
 #include "repeatEvery.h"    // associated tab file
 #include "readVoltage.h"    // associated tab file
 
-// test configuration constants
-const bool testing = 1;  // 1 for artificial voltage readings; 0 for using actual readings
+// test printout configuration constants
+const bool testing = 1;  // 1 for charger class
+const bool pwm1testing = 1;  // 1 for printing from pwm class
 const bool testingPvModel = 0;  // 
 const bool testingBatteryModel = 0;  // activates serial print
 const bool testingPwmStartup = 0;  // 
 const bool testingPwmCurrentDelta = 0;  // 
 const bool testingPwmPower = 0;  // activates serial print
-const bool testingPwmCurrent = 0;  // activates serial print
-const bool testingPwmVoltage = 1;  // activates serial print
-
+const bool testingPwmCurrent = 1;  // activates serial print
+const bool testingPwmVoltage = 0;  // activates serial print
+const bool testingOneLine=0; // 0 removes line feeds within one cycle
+const bool testingFormatSpacing=0; // 0 removes line feeds within one cycle
 
 // hardware configuration constants
 const byte INpin = 9;    // main PWM output to IN of IR2184
@@ -94,15 +96,15 @@ void setup() {
 
 void loop() {
 //  repeatEvery(2000, readVoltsAndAmps);
-  repeatEvery(10000, countLoops);
+//  repeatEvery(10000, countLoops);
 //  repeatEvery(1000, chargerRun);
 //  repeatEvery(500, unitTestPvModel);
 //  repeatEvery(500, unitTestBatteryModel);
 //  repeatEvery(500, unitTestPwmStartup);
 //  repeatEvery(500, unitTestPwmCurrentDelta);
 //  repeatEvery(500, unitTestPwmPower);
-//  repeatEvery(500, unitTestPwmCurrent);
-  repeatEvery(500, unitTestPwmVoltage);
+  repeatEvery(500, unitTestPwmCurrent);
+//  repeatEvery(500, unitTestPwmVoltage);
 
 }
 

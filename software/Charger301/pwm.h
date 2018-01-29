@@ -10,8 +10,9 @@ class pwm1 {
   const int maxTt = 1280;
   const int ccmTt = 320;
   float oldPower=0;
+  float oldIbb=0;
   bool direction=1; // 0 for current down, 1 for current up
-  int track=16; // filtered memory of direction changes
+  int track=8; // filtered memory of direction changes
   byte filter=4; // filter constant for track
   
   public: // changed for unit testing
@@ -36,7 +37,8 @@ class pwm1 {
   void setCcm(){mode=ccm;}  
   Mode readMode(){return mode;}
   void setInductance(float Vbb, float Vpp, float Ipp); // Unit tested
-  bool currentDelta(float Vbb,float Vpp,float Ipp, bool upDown); // unit tested
+  bool IppDelta(float Vbb,float Vpp,float Ipp, bool upDown); // 
+//  bool IbbDelta(float Vbb,float Vpp,float Ipp, bool upDown); // 
   void setPeriod(int period); // period in clock cycles, takes any integer value
   void setAtime(unsigned long Atime, int period); // clock cycles, takes any integer values
   void setBtime(unsigned long Btime, int period); // clock cycles, takes any integer values
@@ -61,7 +63,7 @@ bool pwm1::startup(float Vbb, float Vpp, float Ipp){ //
   setInductance(Vbb,Vpp,Ipp);
 //  L = (Vpp-Vbb)*Tp*Tp/(2*Tt)/Ipp; 
 
-  if (testing){
+  if (pwm1testing){
     // printouts to go with unit test of this function
     Serial.print(F(" startup result: Tt/16="));
     Serial.print((float)Tt/16,4);
@@ -103,7 +105,8 @@ void pwm1::printTTTL(bool upDown, int dutyChange, Mode mode){
   else md="unk";
   Serial.print(" current " + ud + ", " + md + ": dutyChange=");
   Serial.print(dutyChange);
-  Serial.print(F("      Tt/16=")); Serial.print((float)Tt/16,4);
+  if (testingFormatSpacing) Serial.print(F("     "));
+  Serial.print(F(" Tt/16=")); Serial.print((float)Tt/16,4);
   Serial.print(F(" Tt=")); Serial.print(Tt);
   Serial.print(F(" Tp/16=")); Serial.print((float)Tp/16,4);
   Serial.print(F(" Tp=")); Serial.print(Tp);
@@ -113,32 +116,29 @@ void pwm1::printTTTL(bool upDown, int dutyChange, Mode mode){
 }
 
 int pwm1::setDutyChange(bool upDown, Mode mode, float Vbb, float Vpp){
-  // simplified version for testing other functions
-  int dutyChange=1; // reduce this when close to MPP
-//  int dutyChange=16; // reduce this when close to MPP
+  //  int dutyChange=1; // minimum value for initial testing
+  //  if (upDown==0) dutyChange = -dutyChange;
+  int dutyChange=8; // reduce this when close to MPP
 /*
   // following line added to deal with ccm overshoot
-  
   if (mode==dcm&&Tp+dutyChange > ccmTt*Vbb/Vpp){
     dutyChange = 4;
     Serial.println("\n new duty change");
   }
-  
+*/
   if (upDown==0) dutyChange = -dutyChange;
   track = (track * (filter-1)+ dutyChange)/filter;
-  if (track<8&&track>-8) {
+  if (track<4&&track>-4) {
     dutyChange=1;
     if (upDown==0) dutyChange = -dutyChange;
-  } else if (track<16&&track>-16){
+  } else if (track<7&&track>-7){
     dutyChange=4;
     if (upDown==0) dutyChange = -dutyChange;
   }
-*/  
-  if (upDown==0) dutyChange = -dutyChange;
   return dutyChange;
 }
 
-bool pwm1::currentDelta(float Vbb,float Vpp,float Ipp, bool upDown){
+bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
   // ccm:
   // In ccm, to increase current we have to decrease voltage which is Vbb*duty.
   // decrease Tp relative to Tt to increase current
@@ -154,7 +154,8 @@ bool pwm1::currentDelta(float Vbb,float Vpp,float Ipp, bool upDown){
 
   int dutyChange = setDutyChange(upDown, mode, Vbb, Vpp);
   
-  if (testing){
+  if (pwm1testing==1){
+    if (testingOneLine) Serial.print ("\n");
     Serial.print (F(" track=")); Serial.print(track);
   }
 //  int dutyChange=-(float)a1fullScale*Vbb/(Vpp*Ipp)/512;  // should be negative
@@ -167,7 +168,10 @@ bool pwm1::currentDelta(float Vbb,float Vpp,float Ipp, bool upDown){
       if (Tt>=maxTt) Tt=maxTt ;
     }
     Tpe = Tp*Vpp/Vbb; // clock cycles 
-    if(Tt < Tpe*10/8) Tt=Tpe*10/8 ;    // clock cycles 
+    if(Tt < Tpe*10/8) Tt=Tpe*10/8 ; // increase Tt if necessary to maintain the margin between Tpe and Tt 
+    // has Tp reached its upper limit to change to ccm?
+    // change to ccm when Tp is the correct value to make Tt=320 (ccmTt) in ccm
+    // since Tp==Tt*Vbb/Vpp (in ccm) the change point is:
     if (Tp>=ccmTt*Vbb/Vpp) { // change to ccm
         mode=ccm;
         Tt=ccmTt;
@@ -178,15 +182,8 @@ bool pwm1::currentDelta(float Vbb,float Vpp,float Ipp, bool upDown){
     }
       setAtime(Tp, Tt); // 
     
-    // upper Tp limit to change to ccm
-    // change to ccm when Tp is the correct value to make Tt=320
-    // since Tp==Tt*Vbb/Vpp (in ccm) the change point is:
-    
-      
-//    Serial.print ("\n line 165 mode="); Serial.println (mode);
-    
     // printouts to go with unit test of this function
-    if (testing){
+    if (pwm1testing){
       printTTTL(upDown, dutyChange, dcm);
     }
   } else if (mode==ccm){
@@ -195,20 +192,18 @@ bool pwm1::currentDelta(float Vbb,float Vpp,float Ipp, bool upDown){
     Tp += dutyChange;     // clock cycles 
 //      Serial.print("\n Tp="); Serial.print(Tp); 
 //      Serial.print("\n ccmTt*Vbb/Vpp*8/10="); Serial.println(ccmTt*Vbb/Vpp*8/10); 
-    float IppL = ((Vpp-Vbb)*Vbb)/Vpp*Tp/(2.4 *L)/20;
-    Serial.print("\n Ipp="); Serial.print(Ipp,4); 
-    Serial.print(" IppL="); Serial.println(IppL,4); 
-    if (Ipp < IppL) { // // change to dcm
-//    if (Tp<ccmTt*Vbb/Vpp) { // change to dcm
-//    if (Tp<ccmTt*Vbb/Vpp*8/10) { // change to dcm
+    float IppL = ((Vpp-Vbb)*Vbb)/Vpp*Tp/(2.4 *L)/20; // Ipp that would occur if we change to dcm
+//    Serial.print("\n Ipp="); Serial.print(Ipp,4); 
+//    Serial.print(" IppL="); Serial.println(IppL,4); 
+    if (Ipp < IppL) { // change to dcm if the ccm current is lower than dcm current
       mode=dcm;
       Tpe = Tp*Vpp/Vbb; // clock cycles 
-      if(Tt < Tpe*10/8) Tt=Tpe*10/8 ;    // clock cycles 
+      if(Tt < Tpe*10/8) Tt=Tpe*10/8 ; // increase Tt if necessary to maintain the margin between Tpe and Tt 
       setPeriod (Tt);   // 
       setBtime(Tpe, Tt); //
       }
     setAtime(Tp, Tt); // 
-    if (testing){
+    if (pwm1testing){
       printTTTL(upDown, dutyChange, ccm);
     }
   }
@@ -220,13 +215,14 @@ bool pwm1::power(float Vbb, float Vpp, float Ipp){
   // else reverse direction
   float newPower= Vpp*Ipp;
   if (newPower<oldPower) direction = !direction;
-  if (testing){
+  if (pwm1testing){
+    if (testingOneLine) Serial.print ("\n");
     Serial.print(F(" new<old="));Serial.print(newPower<oldPower); 
     Serial.print(F(" oldPower="));Serial.print(oldPower,10); 
     Serial.print(F(" newPower="));Serial.print(newPower,10); 
-    Serial.print(F("\n dir="));Serial.print(direction); 
+    Serial.print(F(" dir="));Serial.print(direction); 
   }
-  currentDelta(Vbb,Vpp,Ipp,direction);
+  IppDelta(Vbb,Vpp,Ipp,direction);
   oldPower=newPower;
 }
 
@@ -266,9 +262,19 @@ void pwm1::setInductance(float Vbb, float Vpp, float Ipp){
 bool pwm1::voltage(float Vbb, float Vpp, float Ipp, float target){
   // manage pwm to maintain Vbb at target
   // keep Vbb at the target
-  // if Vbb is too high, reduce current 
-  currentDelta(Vbb,Vpp,Ipp, Vbb<target); 
-  // Vbb<target is 1 to increase current, 0 to reduce it
+  // if Vbb is too high, reduce Ibb;
+  // if Vbb is too low, increase Ibb. 
+  // direction is 1 to increase Ipp, 0 to reduce it
+  if (Vbb<target) { // increase Ibb
+    float newIbb = Ipp * Vpp / Vbb;
+    if(newIbb<oldIbb) direction = !direction;
+    IppDelta(Vbb,Vpp,Ipp,direction);
+    oldIbb=newIbb;
+//    Serial.println("\n Line 270 pwm1::voltage");
+  } else { // reduce Ipp
+    IppDelta(Vbb,Vpp,Ipp, 0); 
+//    Serial.println("\n Line 273 pwm1::voltage");
+  }
 /*  
   if (Vbb<target){
     // increase current
@@ -281,7 +287,7 @@ bool pwm1::voltage(float Vbb, float Vpp, float Ipp, float target){
 
 bool pwm1::current(float Vbb, float Vpp, float Ipp, float target){
   // manage pwm to maintain Ipp at target
-  currentDelta(Vbb,Vpp,Ipp, Ipp<target); 
+  IppDelta(Vbb,Vpp,Ipp, Ipp<target); 
   // Ipp<target is 1 to increase current, 0 to reduce it
 /*  
   if (Ipp<target){

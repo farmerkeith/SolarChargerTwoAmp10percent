@@ -1,4 +1,8 @@
 // testing tab file created 24 Jan 2018
+// battery model class
+// pv panel model class
+// unit test functions for power (mppt), voltage limit, current limit
+// 
 
 class batteryModel{
   // simple model of a 12V FLA battery
@@ -79,7 +83,10 @@ void pvModel::setIllumination (float illu){
   }
 
 float pvModel::current (float Vpp){
-  if (testingPvModel) Serial.print("\n pvModel");
+  if (testingPvModel) {
+    if (testingOneLine) Serial.print("\n");
+    Serial.print(" pvModel");
+  }
   float current;
   float Impp = maxPwr/Vmpp;
   if (testingPvModel){
@@ -107,7 +114,7 @@ void unitTestPvModel (bool flag, unsigned long & Time){
   if (flag) {
     lastTime=Time;
     if (testingPvModel){
-      Serial.print (F("\n\npvModel.current Test:Time="));
+      Serial.print (F("\n pvModel.current Test:Time="));
       Serial.print ((float)millis()/1000,3);
     }
     static float Vpp = 10;
@@ -124,7 +131,7 @@ void unitTestPvModel (bool flag, unsigned long & Time){
       Serial.print (F(" Vpp="));
       Serial.print (Vpp);
       Serial.print (F(" current="));
-      Serial.println (current);
+      Serial.print (current);
     }
   }
   Time = lastTime;
@@ -136,7 +143,7 @@ void unitTestBatteryModel (bool flag, unsigned long & Time){
   if (flag) {
     lastTime=Time;
     if (testingBatteryModel){
-      Serial.print (F("\n\nbatteryModel.voltage Test:Time="));
+      Serial.print (F("\nbatteryModel.voltage Test:Time="));
       Serial.print ((float)millis()/1000,3);
     }
     static float Vbb = 10;
@@ -248,10 +255,12 @@ void unitTestPwmCurrentDelta (bool flag, unsigned long & Time){
       Serial.print(Ipp,2);
     }
 
-    if (Vbb>=charger.VbbStartMin&&Vbb<=charger.VbbStartMax&&Vpp>=charger.VppStartMin&&Vpp<=charger.VppStartMax){
-    pwm1.currentDelta(Vbb, Vpp, Ipp,1);
+    if (Vbb>=charger.VbbStartMin&&Vbb<=charger.VbbStartMax&&
+      Vpp>=charger.VppStartMin&&Vpp<=charger.VppStartMax){
+      pwm1.IppDelta(Vbb, Vpp, Ipp,1);
     } else {
       if (testingPwmCurrentDelta){
+        if (testingOneLine) Serial.print ("\n");
         Serial.print (" Values_outside_range allowed");
         Serial.print(F(" Tt/16="));
         Serial.print((float)pwm1.Tt/16,4);
@@ -283,17 +292,49 @@ float matchDcmToPv(float Ipp, float IppL, float Vbb, float Vpp, int Tp, int Tt){
   return Vpp;
 }
 
+void printTestHeader(float target, String testType){
+      Serial.print ("\npwm1." + testType +"_Test:Time=");
+      Serial.print ((float)millis()/1000,3);
+      Serial.print (F(" target=")); Serial.print (target);
+      Serial.print (F(" battery_soc=")); Serial.print (battery.readSoc());
+      Serial.print (F(" pv_illumination=")); Serial.print (pvModel.getIllumination());
+}
+
+void printVIIdelta(float Vpp, float Ipp, float IppL){
+  if (testingOneLine) Serial.print ("\n");
+  Serial.print (F(" Vpp="));   Serial.print(Vpp,3);
+  Serial.print (F(" Ipp="));   Serial.print(Ipp,4);
+  Serial.print (F(" IppL="));   Serial.print(IppL,4);
+  Serial.print (F(" Ipp delta="));   Serial.print(Ipp-IppL,4);
+  Serial.print (F(" soc="));   Serial.print(battery.readSoc(),4);
+  //  Serial.print (F("\n Mode=")); Serial.print (pwm1.readMode());
+}
+
+void printVVIIdelta(float Vbb, float Vpp, float Ipp, float IppL){
+  if (testingOneLine) Serial.print ("\n");
+  Serial.print (F(" Vbb=")); Serial.print(Vbb,4);
+  Serial.print (F(" Vpp="));   Serial.print(Vpp,3);
+  Serial.print (F(" Ipp="));   Serial.print(Ipp,4);
+  Serial.print (F(" Ipp delta="));   Serial.print(Ipp-IppL,4);
+  Serial.print (F(" Ibb="));   Serial.print(Ipp*Vpp/Vbb,3);
+//  Serial.print (F(" soc="));   Serial.print(battery.readSoc(),4);
+}
+
+void printTTT(int Tt, int Tp, int Tpe){
+      Serial.print(F(" Tt/16=")); Serial.print((float)Tt/16,4);
+      Serial.print(F(" Tt=")); Serial.print(Tt);
+      Serial.print(F(" Tp/16=")); Serial.print((float)Tp/16,4);
+      Serial.print(F(" Tp="));    Serial.print(Tp);
+      Serial.print(F(" Tpe/16=")); Serial.print((float)Tpe/16,4);
+      Serial.print(F(" Tpe="));    Serial.print(Tpe);
+}
+
 void unitTestPwmPower (bool flag, unsigned long & Time){
 // test of pwm1.power(Vbb, Vpp, Ipp)
   static unsigned long lastTime;
   if (flag) {
     lastTime=Time;
-    if (testingPwmPower){
-      Serial.print (F("\n\npwm1.power_Test:Time="));
-      Serial.print ((float)millis()/1000,3);
-      Serial.print (F(" battery soc=")); Serial.print (battery.readSoc());
-      Serial.print (F(" pv illumination=")); Serial.print (pvModel.getIllumination());
-    }
+    if (testingPwmPower) printTestHeader(0, "power");
     static float Vbb=charger.VbbStartMin;
     static float Vpp=pvModel.getVoc();
     static int Tt=12*16; // 12 us initial value
@@ -314,10 +355,7 @@ void unitTestPwmPower (bool flag, unsigned long & Time){
     else IppL = (Vpp-Vbb)/pwm1.L*Tp*Tp/32/Tt; // dcm
     Ipp=pvModel.current(Vpp);
     if (testingPwmPower){
-      Serial.print (F("\n Vpp="));   Serial.print(Vpp,3);
-      Serial.print (F(" Ipp="));   Serial.print(Ipp,4);
-      Serial.print (F(" IppL="));   Serial.print(IppL,4);
-      Serial.print (F(" Ipp delta="));   Serial.print(Ipp-IppL,4);
+      printVIIdelta(Vpp, Ipp, IppL);
       //  Serial.print (F("\n Mode=")); Serial.print (pwm1.readMode());
     }
     if (pwm1.readMode()==2) { // dcm
@@ -349,16 +387,8 @@ void unitTestPwmPower (bool flag, unsigned long & Time){
     // Ip mean=(Vpp-Vbb)/L*Tp^2/2/Tt
     
     if (testingPwmPower){
-      Serial.print (F("\n Vbb=")); Serial.print(Vbb,1);
-      Serial.print (F(" Vpp="));   Serial.print(Vpp,3);
-      Serial.print (F(" Ipp="));   Serial.print(Ipp,4);
-      Serial.print (F(" Ipp delta="));   Serial.print(Ipp-IppL,4);
-      Serial.print(F("       Tt/16=")); Serial.print((float)Tt/16,4);
-      Serial.print(F(" Tt=")); Serial.print(Tt);
-      Serial.print(F(" Tp/16=")); Serial.print((float)Tp/16,4);
-      Serial.print(F(" Tp="));    Serial.print(Tp);
-      Serial.print(F(" Tpe/16=")); Serial.print((float)Tpe/16,4);
-      Serial.print(F(" Tpe="));    Serial.println(Tpe);
+      printVVIIdelta(Vbb, Vpp, Ipp, IppL);
+      printTTT(Tt, Tp, Tpe);
     }
     if (Vbb>=charger.VbbStartMin-1&&Vbb<=charger.VbbStartMax+3 && \
         Vpp>=charger.VppStartMin-4&&Vpp<=charger.VppStartMax){
@@ -374,6 +404,8 @@ void unitTestPwmPower (bool flag, unsigned long & Time){
     } else {
       if (testingPwmPower){
         Serial.print (" Values_outside_range allowed");
+        printTTT(Tt, Tp, Tpe);
+/*        
         Serial.print(F(" Tt/16="));
         Serial.print((float)pwm1.Tt/16,4);
         // Serial.print(F(" pwm1.Tp="));
@@ -382,37 +414,13 @@ void unitTestPwmPower (bool flag, unsigned long & Time){
         Serial.print((float)pwm1.Tp/16,4);
         Serial.print(F(" Tpe/16="));
         Serial.print((float)pwm1.Tpe/16,4);
+*/        
       }
     }
   }
   Time = lastTime;
 }
 
-void printVIIdelta(float Vpp, float Ipp, float IppL){
-  Serial.print (F("\n Vpp="));   Serial.print(Vpp,3);
-  Serial.print (F(" Ipp="));   Serial.print(Ipp,4);
-  Serial.print (F(" IppL="));   Serial.print(IppL,4);
-  Serial.print (F(" Ipp delta="));   Serial.print(Ipp-IppL,4);
-  Serial.print (F(" soc="));   Serial.print(battery.readSoc(),4);
-  //  Serial.print (F("\n Mode=")); Serial.print (pwm1.readMode());
-}
-
-void printVVIIdelta(float Vbb, float Vpp, float Ipp, float IppL){
-  Serial.print (F("\n Vbb=")); Serial.print(Vbb,4);
-  Serial.print (F(" Vpp="));   Serial.print(Vpp,3);
-  Serial.print (F(" Ipp="));   Serial.print(Ipp,4);
-  Serial.print (F(" Ipp delta="));   Serial.print(Ipp-IppL,4);
-//  Serial.print (F(" soc="));   Serial.print(battery.readSoc(),4);
-}
-
-void printTTT(int Tt, int Tp, int Tpe){
-      Serial.print(F(" Tt/16=")); Serial.print((float)Tt/16,4);
-      Serial.print(F(" Tt=")); Serial.print(Tt);
-      Serial.print(F(" Tp/16=")); Serial.print((float)Tp/16,4);
-      Serial.print(F(" Tp="));    Serial.print(Tp);
-      Serial.print(F(" Tpe/16=")); Serial.print((float)Tpe/16,4);
-      Serial.print(F(" Tpe="));    Serial.println(Tpe);
-}
 
 
 void unitTestPwmCurrent (bool flag, unsigned long & Time){
@@ -421,12 +429,7 @@ void unitTestPwmCurrent (bool flag, unsigned long & Time){
   if (flag) {
     lastTime=Time;
     float target=2; // Amps
-    if (testingPwmCurrent){
-      Serial.print (F("\n\npwm1.current_Test:Time="));
-      Serial.print ((float)millis()/1000,3);
-      Serial.print (F(" target=")); Serial.print (target);
-      Serial.print (F(" battery soc=")); Serial.print (battery.readSoc());
-    }
+    if (testingPwmCurrent) printTestHeader(target, "current");
     static float Vbb=charger.VbbStartMin;
     static float Vpp=pvModel.getVoc();
     static int Tt=12*16; // 12 us initial value
@@ -497,12 +500,7 @@ void unitTestPwmVoltage (bool flag, unsigned long & Time){
   if (flag) {
     lastTime=Time;
     float target=charger.VbbStartMax+0.2;
-    if (testingPwmVoltage){
-      Serial.print (F("\n\npwm1.voltage_Test:Time="));
-      Serial.print ((float)millis()/1000,3);
-      Serial.print (F(" target=")); Serial.print (target);
-      Serial.print (F(" battery soc=")); Serial.print (battery.readSoc());
-    }
+    if (testingPwmVoltage) printTestHeader(target, "voltage");
     pvModel.setIllumination(0.5);
     static float Vbb=charger.VbbStartMin;
     static float Vpp=pvModel.getVoc();

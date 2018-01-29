@@ -1,4 +1,4 @@
-// LCD object
+// LCD object for 1602 LCD (2 rows of 16 characters each)
 // screen layouts
 // startup screen
 //character 0   1  2   3  4  5   6  7  8      9  10    11 12  13 14 15 

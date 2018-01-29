@@ -1,5 +1,4 @@
 // File created 15 Jan 2018
-// This object is designed to be called on every loop
 // On command the ADC measures a number of times, 
 // readVoltage(1) does a single measurement with no filtering
 // readVoltage(2) or readVoltage(n) does a series of measurements lasting n milliseconds
@@ -9,7 +8,7 @@
 class readVoltsAmps {
   public:
   readVoltsAmps(byte p); // p=pin. Constructor
-  readVoltsAmps(byte p, byte refType); //p=pin. Constructor
+  readVoltsAmps(byte p, byte refType); //p=pin. refType=voltage reference internal or Vcc. Constructor
   // functions
   void init();
   void calibrateZero(long adc);
@@ -35,27 +34,22 @@ class readVoltsAmps {
   long currentFullScale = 13500;    // mA for ACS712, max 2^15-1 = 32,767
   // ACS712 nominal sensitivity is 185 mV/Amp. If Vcc is 5.00V the voltage change is 2500 mV for a voltCode change of 512
   // 2500 mV/185mV = 13.514 Amps for 512 codes, so each code is 13514/512= 26 mA. 
-//  int taskPeriod = 20; // interval between measurements (default: 20 ms)
-//  byte filter = 4; // exponential decay filter parameter 2^n; 0 for no filtering (default 16, can be 0 up to 10(for 1024) 
-//  byte filterLevel = 4; // No. of filter stages in series; max is 4 (ToDo: default 4, can be 1 up to 8).
-//  int ignoreThreshold = 5; // adc Code :discard criterion (0 for no discard; 1,2,3 etc for allowable distance from mean; 
-  byte discardLimit=3; //  limit on multiple successive discards (default: 3)
+  //  int taskPeriod = 20; // interval between measurements (default: 20 ms)
+  //  byte filter = 4; // exponential decay filter parameter 2^n; 0 for no filtering (default 16, can be 0 up to 10(for 1024) 
+  //  byte filterLevel = 4; // No. of filter stages in series; max is 4 (ToDo: default 4, can be 1 up to 8).
+  //  int ignoreThreshold = 5; // adc Code :discard criterion (0 for no discard; 1,2,3 etc for allowable distance from mean; 
   byte timeAllowed=20; // 0 for Mode 1, >0 for Mode 2
 
   // private functions
   private:
-//  unsigned long filterAdc(unsigned long _adcCode, byte filter); // used by run
   long stabiliseReading(); // needed after change of ARef
   // working variables
   private:
   long zeroOffset=200; // ADC output code * 100 for zero voltage 
   long currentOffset=512; // adc code for zero current
   unsigned long voltsTime=0; // timer for regular execution of run()
-//  unsigned long filteredAdcCodeArray[8];
   unsigned long counter = 0, oldCounter = 0;
   unsigned long adcCode = 0;
-//  unsigned long filteredAdcCode = 0; 
-//  bool mode1=0; // set to 1 by run(); zero means mode 2.
 };
 
 // constructors
@@ -78,7 +72,6 @@ void readVoltsAmps::init(){
   // increment start time to just after now
 //  while ((long)(millis()-voltsTime)>=0) voltsTime += taskPeriod; 
 }
-
 
 // _____________________________
 unsigned long readVoltsAmps::getVoltCode(byte timeAllowed){ 
@@ -114,20 +107,6 @@ unsigned long readVoltsAmps::getMilliVolts(byte timeAllowed){ // returns milli v
   unsigned long ww = (vc -zeroOffset)/2 ; 
   return ((ww*fullScale) / (1024-zeroOffset/100))/50; // millivolts
 }
-
-/*
-// _____________________________
-unsigned long readVoltsAmps::filterAdc(unsigned long adc, byte fil){ //
-  if (fil>10) fil=10;
-  unsigned long fa =filteredAdcCodeArray[0]<<fil;
-  filteredAdcCodeArray[0] = (fa + adc-filteredAdcCodeArray[0])>>fil;
-  for (int i=1; i<filterLevel; i++){
-    fa =filteredAdcCodeArray[i]<<fil;
-    filteredAdcCodeArray[i]= (fa + filteredAdcCodeArray[i-1]-filteredAdcCodeArray[i])>>fil;
-  } 
-  return filteredAdcCodeArray[filterLevel-1];
-}
-*/
 
 // _____________________________
 void readVoltsAmps::calibrateZero(long adc){ 
@@ -174,5 +153,4 @@ void readVoltsAmps::calibrateZeroAmps(long adc){
 void readVoltsAmps::calibrateAmps(unsigned long mA){
   currentFullScale = mA;    
 }
-
 
