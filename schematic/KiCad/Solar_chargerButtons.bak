@@ -1,0 +1,242 @@
+EESchema Schematic File Version 2
+LIBS:Modules
+LIBS:modules
+LIBS:Solar_Charger3-rescue
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:Solar_Charger3-cache
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 3 10
+Title "Solar Charger V3"
+Date "2017-01-10"
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L R R1
+U 1 1 587341B4
+P 5050 3400
+F 0 "R1" V 5130 3400 50  0000 C CNN
+F 1 "10K" V 5050 3400 50  0000 C CNN
+F 2 "" V 4980 3400 50  0000 C CNN
+F 3 "" H 5050 3400 50  0000 C CNN
+	1    5050 3400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R2
+U 1 1 587341BB
+P 5350 3400
+F 0 "R2" V 5430 3400 50  0000 C CNN
+F 1 "10K" V 5350 3400 50  0000 C CNN
+F 2 "" V 5280 3400 50  0000 C CNN
+F 3 "" H 5350 3400 50  0000 C CNN
+	1    5350 3400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R3
+U 1 1 587341C2
+P 5650 3400
+F 0 "R3" V 5730 3400 50  0000 C CNN
+F 1 "10K" V 5650 3400 50  0000 C CNN
+F 2 "" V 5580 3400 50  0000 C CNN
+F 3 "" H 5650 3400 50  0000 C CNN
+	1    5650 3400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R4
+U 1 1 587341C9
+P 5950 3400
+F 0 "R4" V 6030 3400 50  0000 C CNN
+F 1 "10K" V 5950 3400 50  0000 C CNN
+F 2 "" V 5880 3400 50  0000 C CNN
+F 3 "" H 5950 3400 50  0000 C CNN
+	1    5950 3400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R5
+U 1 1 587341D0
+P 6250 3400
+F 0 "R5" V 6330 3400 50  0000 C CNN
+F 1 "10K" V 6250 3400 50  0000 C CNN
+F 2 "" V 6180 3400 50  0000 C CNN
+F 3 "" H 6250 3400 50  0000 C CNN
+	1    6250 3400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R6
+U 1 1 587341D7
+P 6550 3400
+F 0 "R6" V 6630 3400 50  0000 C CNN
+F 1 "10K" V 6550 3400 50  0000 C CNN
+F 2 "" V 6480 3400 50  0000 C CNN
+F 3 "" H 6550 3400 50  0000 C CNN
+	1    6550 3400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R8
+U 1 1 587341DE
+P 6700 3550
+F 0 "R8" V 6780 3550 50  0000 C CNN
+F 1 "1000K" V 6600 3550 50  0000 C CNN
+F 2 "" V 6630 3550 50  0000 C CNN
+F 3 "" H 6700 3550 50  0000 C CNN
+	1    6700 3550
+	-1   0    0    1   
+$EndComp
+$Comp
+L R R7
+U 1 1 587341E5
+P 5050 3150
+F 0 "R7" V 5130 3150 50  0000 C CNN
+F 1 "150K" V 5050 3150 50  0000 C CNN
+F 2 "" V 4980 3150 50  0000 C CNN
+F 3 "" H 5050 3150 50  0000 C CNN
+	1    5050 3150
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5200 3150 5200 3650
+Wire Wire Line
+	4900 3150 4900 3400
+Wire Wire Line
+	4550 3150 4900 3150
+$Comp
+L Button Right1
+U 1 1 58734FF5
+P 5200 3800
+F 0 "Right1" H 5200 3955 50  0000 C CNN
+F 1 "Button" H 5200 3775 50  0000 C CNN
+F 2 "" H 5200 3880 50  0000 C CNN
+F 3 "" V 5200 3775 50  0000 C CNN
+	1    5200 3800
+	0    -1   -1   0   
+$EndComp
+Connection ~ 5200 3400
+$Comp
+L Button Down1
+U 1 1 5873599A
+P 5500 3800
+F 0 "Down1" H 5500 3955 50  0000 C CNN
+F 1 "Button" H 5500 3775 50  0000 C CNN
+F 2 "" H 5500 3880 50  0000 C CNN
+F 3 "" V 5500 3775 50  0000 C CNN
+	1    5500 3800
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5500 3400 5500 3650
+$Comp
+L Button Up1
+U 1 1 58735ABA
+P 5800 3800
+F 0 "Up1" H 5800 3955 50  0000 C CNN
+F 1 "Button" H 5800 3775 50  0000 C CNN
+F 2 "" H 5800 3880 50  0000 C CNN
+F 3 "" V 5800 3775 50  0000 C CNN
+	1    5800 3800
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5800 3400 5800 3650
+$Comp
+L Button Left1
+U 1 1 58735B38
+P 6100 3800
+F 0 "Left1" H 6100 3955 50  0000 C CNN
+F 1 "Button" H 6100 3775 50  0000 C CNN
+F 2 "" H 6100 3880 50  0000 C CNN
+F 3 "" V 6100 3775 50  0000 C CNN
+	1    6100 3800
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	6100 3400 6100 3650
+$Comp
+L Button Set1
+U 1 1 58735BCA
+P 6400 3800
+F 0 "Set1" H 6400 3955 50  0000 C CNN
+F 1 "Button" H 6400 3775 50  0000 C CNN
+F 2 "" H 6400 3880 50  0000 C CNN
+F 3 "" V 6400 3775 50  0000 C CNN
+	1    6400 3800
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	6400 3400 6400 3650
+$Comp
+L Button Reset1
+U 1 1 58735C96
+P 4800 3550
+F 0 "Reset1" H 4800 3705 50  0000 C CNN
+F 1 "Button" H 4800 3525 50  0000 C CNN
+F 2 "" H 4800 3630 50  0000 C CNN
+F 3 "" V 4800 3525 50  0000 C CNN
+	1    4800 3550
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4800 3150 4800 3400
+Wire Wire Line
+	4800 3700 4800 3800
+Wire Wire Line
+	4800 3800 4550 3800
+Wire Wire Line
+	4550 3950 6700 3950
+Wire Wire Line
+	6700 3950 6700 3700
+Wire Wire Line
+	4550 2950 6750 2950
+Wire Wire Line
+	6750 2950 6750 3400
+Wire Wire Line
+	6750 3400 6700 3400
+Text HLabel 4550 3950 0    60   Input ~ 0
+BUTTON-OUT
+Text HLabel 4550 3800 0    60   Input ~ 0
+RST
+Text HLabel 4550 3150 0    60   Input ~ 0
++5V
+Text HLabel 4550 2950 0    60   Input ~ 0
+GND
+$EndSCHEMATC
