@@ -65,12 +65,16 @@ bool pwm1::startup(float Vbb, float Vpp, float Ipp){ //
 
   if (pwm1testing){
     // printouts to go with unit test of this function
-    Serial.print(F(" startup result: Tt/16="));
+    Serial.print(F("\n startup result: "));
+    printTTTL(1 , 0, dcm);
+/*    
     Serial.print((float)Tt/16,4);
+    Serial.print(" Tt="); Serial.print(Tt);
     Serial.print(" Tp/16="); Serial.print((float)Tp/16,4);
     Serial.print(" Tpe/16="); Serial.print((float)Tpe/16,4);
     Serial.print(" L="); Serial.print(L);
     Serial.print(" IppStart="); Serial.print(IppStart);
+*/
   }
 }
 
@@ -128,7 +132,7 @@ int pwm1::setDutyChange(bool upDown, Mode mode, float Vbb, float Vpp){
 */
   if (upDown==0) dutyChange = -dutyChange;
   track = (track * (filter-1)+ dutyChange)/filter;
-  if (track<4&&track>-4) {
+  if (track<5&&track>-5) {
     dutyChange=1;
     if (upDown==0) dutyChange = -dutyChange;
   } else if (track<7&&track>-7){
@@ -227,6 +231,7 @@ bool pwm1::power(float Vbb, float Vpp, float Ipp){
 }
 
 bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
+  Serial.println(F("\n init power function"));
   // coming from startup
   // set up pwm in dcm
   float margin = 1.0;
@@ -242,11 +247,16 @@ bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
       Serial.println(F("Error in pwm.h pwm1::initPower"));
       break;
   }
-  // Tp = (Ipp mean)*(2.4*L*Vpp)/((Vpp-Vbb)*Vbb) microseconds
-  // Tt = 1.2 * Tp*Vpp/Vbb microseconds
-  Tp = Ipp*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
-  Tpe = Tp*Vpp/Vbb;          // clock cycles 
-  Tt = (Tp+Tpe) * margin;    // clock cycles 
+  if (mode != ccm){
+    // Tp = (Ipp mean)*(2.4*L*Vpp)/((Vpp-Vbb)*Vbb) microseconds
+    // Tt = 1.2 * Tp*Vpp/Vbb microseconds
+    Tp = Ipp*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
+    Tpe = Tp*Vpp/Vbb;          // clock cycles 
+    Tt = (Tp+Tpe) * margin;    // clock cycles 
+  }
+  Serial.print("\n initPower line 257 Tt=");  Serial.print(Tt);
+  Serial.print(" Tp=");  Serial.print(Tp);
+  Serial.print(" Tpe=");  Serial.print(Tpe);
   setPeriod (Tt);   // 
   setAtime(Tp, Tt); // 
   setBtime(Tpe, Tt); //

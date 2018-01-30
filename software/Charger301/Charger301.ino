@@ -25,10 +25,10 @@ const bool testingBatteryModel = 0;  // activates serial print
 const bool testingPwmStartup = 0;  // 
 const bool testingPwmCurrentDelta = 0;  // 
 const bool testingPwmPower = 0;  // activates serial print
-const bool testingPwmCurrent = 1;  // activates serial print
+const bool testingPwmCurrent = 0;  // activates serial print
 const bool testingPwmVoltage = 0;  // activates serial print
-const bool testingOneLine=0; // 0 removes line feeds within one cycle
-const bool testingFormatSpacing=0; // 0 removes line feeds within one cycle
+const bool testingOneLine=1; // 0 removes line feeds in the same cycle
+const bool testingFormatSpacing=0; // 0 removes extra space characters
 
 // hardware configuration constants
 const byte INpin = 9;    // main PWM output to IN of IR2184
@@ -46,8 +46,10 @@ const int maxCurrent = 2000;   // milliAmps
 // battery management constants
 const int floatVoltage=12600;  // milliVolts
 const int boostVoltage=14200;  // milliVolts
-const int boostTimeLimit=3600; // seconds
-const int boostTimeReset=3600; // seconds
+//const int boostTimeLimit=3600; // seconds
+const int boostTimeLimit=60; // seconds for testing (1 minutes)
+//const int boostTimeReset=3600; // seconds
+const int boostTimeReset=360; // seconds for testing (6 minutes)
 
 // voltage and current measurement calibration
 const unsigned long a0fullScale = 30604; // mV, Vpp
@@ -57,6 +59,7 @@ const long a1ZeroScale = 512; // adc code, Ipp
 
 
 #include "pwm.h"                // associated tab file
+#include "testModels.h"         // associated tab file
 #include "charger.h"            // associated tab file
 #include "testing.h"            // associated tab file
 
@@ -96,14 +99,14 @@ void setup() {
 
 void loop() {
 //  repeatEvery(2000, readVoltsAndAmps);
-//  repeatEvery(10000, countLoops);
-//  repeatEvery(1000, chargerRun);
+  repeatEvery(10000, countLoops);
+  repeatEvery(500, chargerRun);
 //  repeatEvery(500, unitTestPvModel);
 //  repeatEvery(500, unitTestBatteryModel);
 //  repeatEvery(500, unitTestPwmStartup);
 //  repeatEvery(500, unitTestPwmCurrentDelta);
 //  repeatEvery(500, unitTestPwmPower);
-  repeatEvery(500, unitTestPwmCurrent);
+//  repeatEvery(500, unitTestPwmCurrent);
 //  repeatEvery(500, unitTestPwmVoltage);
 
 }
