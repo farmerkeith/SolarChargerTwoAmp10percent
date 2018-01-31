@@ -41,7 +41,8 @@ const int minCurrent = 100;    // milliAmps
 const int startCurrent=500;    // milliAmps
 const int maxStartTime=5000;   // milli seconds
 const int minOffTime=5000;     // milli seconds
-const int maxCurrent = 2000;   // milliAmps
+const int maxCurrent = 5000;   // milliAmps
+const int chargerRepeatPeriod = 500; // milliseconds
 
 // battery management constants
 const int floatVoltage=12600;  // milliVolts
@@ -100,7 +101,7 @@ void setup() {
 void loop() {
 //  repeatEvery(2000, readVoltsAndAmps);
   repeatEvery(10000, countLoops);
-  repeatEvery(500, chargerRun);
+  repeatEvery(chargerRepeatPeriod, chargerRun);
 //  repeatEvery(500, unitTestPvModel);
 //  repeatEvery(500, unitTestBatteryModel);
 //  repeatEvery(500, unitTestPwmStartup);

@@ -55,7 +55,7 @@ bool pwm1::startup(float Vbb, float Vpp, float Ipp){ //
   // Tt = 1.2 * Tp*Vpp/Vbb microseconds
   Tp  = IppStart*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
   Tpe = Tp+TeStart*16;       // clock cycles // 16 clock cycles per microsecond extension for Te pulse
-  Tt  = Tp*Vpp/Vbb * 1.2;    // clock cycles
+  Tt  = Tp*Vpp/Vbb * 1.25;    // clock cycles
   setPeriod (Tt);   // 
   setAtime(Tp, Tt); // 
   setBtime(Tpe, Tt); //
@@ -66,7 +66,7 @@ bool pwm1::startup(float Vbb, float Vpp, float Ipp){ //
   if (pwm1testing){
     // printouts to go with unit test of this function
     Serial.print(F("\n startup result: "));
-    printTTTL(1 , 0, dcm);
+    printTTTL(1 , 0, mode);
 /*    
     Serial.print((float)Tt/16,4);
     Serial.print(" Tt="); Serial.print(Tt);
@@ -164,6 +164,7 @@ bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
   }
 //  int dutyChange=-(float)a1fullScale*Vbb/(Vpp*Ipp)/512;  // should be negative
 
+//  Serial.print (F("\n pwm line 171 mode=")); Serial.println(mode);
   if (mode==dcm){
     Tp += dutyChange; // clock cycles 
     if (Tp<=minTp) { // lower limit for low currents
@@ -184,19 +185,18 @@ bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
         setPeriod (Tt);   // 
         setBtime(Tpe, Tt); //
     }
-      setAtime(Tp, Tt); // 
+    setAtime(Tp, Tt); // 
+//    Serial.print("\n pwm line 193 mode="); Serial.println(mode);
     
     // printouts to go with unit test of this function
-    if (pwm1testing){
-      printTTTL(upDown, dutyChange, dcm);
-    }
+//    if (pwm1testing) printTTTL(upDown, dutyChange, dcm); 
   } else if (mode==ccm){
     // SDpin is continuously ON 
     // Change in duty = -Vbb/(Vpp*Ipp)*dI
     Tp += dutyChange;     // clock cycles 
-//      Serial.print("\n Tp="); Serial.print(Tp); 
+//    Serial.print("\n pwm line 201 Tp="); Serial.print(Tp); 
 //      Serial.print("\n ccmTt*Vbb/Vpp*8/10="); Serial.println(ccmTt*Vbb/Vpp*8/10); 
-    float IppL = ((Vpp-Vbb)*Vbb)/Vpp*Tp/(2.4 *L)/20; // Ipp that would occur if we change to dcm
+    float IppL = ((Vpp-Vbb)*Vbb)/Vpp*Tp/L/40; // Ipp that would occur if we change to dcm
 //    Serial.print("\n Ipp="); Serial.print(Ipp,4); 
 //    Serial.print(" IppL="); Serial.println(IppL,4); 
     if (Ipp < IppL) { // change to dcm if the ccm current is lower than dcm current
@@ -207,10 +207,9 @@ bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
       setBtime(Tpe, Tt); //
       }
     setAtime(Tp, Tt); // 
-    if (pwm1testing){
-      printTTTL(upDown, dutyChange, ccm);
-    }
   }
+//  Serial.print("\n pwm line 215 mode="); Serial.println(mode); 
+  if (pwm1testing) printTTTL(upDown, dutyChange, mode); 
 }
 
 bool pwm1::power(float Vbb, float Vpp, float Ipp){
@@ -228,19 +227,20 @@ bool pwm1::power(float Vbb, float Vpp, float Ipp){
   }
   IppDelta(Vbb,Vpp,Ipp,direction);
   oldPower=newPower;
+//  Serial.print("\n pwm line 231 power, Vpp="); Serial.println(Vpp);
 }
 
 bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
-  Serial.println(F("\n init power function"));
+  //  Serial.println(F("\n init power function"));
   // coming from startup
   // set up pwm in dcm
   float margin = 1.0;
   switch (mode){
     case start:
       mode=dcm; lastMode=start; 
-      margin = 1.2; break;
+      margin = 1.25; break;
     case dcm:
-      margin = 1.2; break;
+      margin = 1.25; break;
     case ccm:
       margin = 1.0; break;
     default: // presumaby mode=off
@@ -249,14 +249,20 @@ bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
   }
   if (mode != ccm){
     // Tp = (Ipp mean)*(2.4*L*Vpp)/((Vpp-Vbb)*Vbb) microseconds
-    // Tt = 1.2 * Tp*Vpp/Vbb microseconds
+    // Tt = 1.25 * Tp*Vpp/Vbb microseconds
     Tp = Ipp*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
     Tpe = Tp*Vpp/Vbb;          // clock cycles 
-    Tt = (Tp+Tpe) * margin;    // clock cycles 
+    Tt = (Tpe) * margin;    // clock cycles 
   }
-  Serial.print("\n initPower line 257 Tt=");  Serial.print(Tt);
+  direction = 0; // reduce current
+/*  
+  Serial.print("\n pwm1.initPower line 257 Tt=");  Serial.print(Tt);
   Serial.print(" Tp=");  Serial.print(Tp);
   Serial.print(" Tpe=");  Serial.print(Tpe);
+  Serial.print(" Vbb=");  Serial.print(Vbb);
+  Serial.print(" Vpp=");  Serial.print(Vpp);
+  Serial.print(" Ipp=");  Serial.print(Ipp);
+*/  
   setPeriod (Tt);   // 
   setAtime(Tp, Tt); // 
   setBtime(Tpe, Tt); //
@@ -275,6 +281,8 @@ bool pwm1::voltage(float Vbb, float Vpp, float Ipp, float target){
   // if Vbb is too high, reduce Ibb;
   // if Vbb is too low, increase Ibb. 
   // direction is 1 to increase Ipp, 0 to reduce it
+//  Serial.print(F("\n pwm line 286 Vbb=")); Serial.print(Vbb);
+//  Serial.print(F(" target=")); Serial.print(target);
   if (Vbb<target) { // increase Ibb
     float newIbb = Ipp * Vpp / Vbb;
     if(newIbb<oldIbb) direction = !direction;
