@@ -79,7 +79,7 @@ void pvModel::setIllumination (float illu){
   else Vmpp=Vmpp100-(Vmpp100-Vmpp0)*2.05036*(1-illu);
   // =IF(illu<=0.5122,Vmpp0 ,Vmpp100-(Vmpp100-Vmpp0)*2.05036*(1-illu))
   maxPwr=Capacity * illu;
-  }
+}
 
 float pvModel::current (float Vpp){
   if (testingPvModel) {
@@ -117,14 +117,17 @@ void printVVIIdelta(float Vbb, float Vpp, float Ipp, float IppL){
 //  Serial.print (F(" soc="));   Serial.print(battery.readSoc(),4);
 }
 
-void printTTT(int Tt, int Tp, int Tpe){
-      Serial.print(F(" Tt/16=")); Serial.print((float)Tt/16,4);
+
+void printTTT(int Tt, int Tp, int Tpe, byte mode){
+//      Serial.print(F(" Tt/16=")); Serial.print((float)Tt/16,4);
       Serial.print(F(" Tt=")); Serial.print(Tt);
-      Serial.print(F(" Tp/16=")); Serial.print((float)Tp/16,4);
+//      Serial.print(F(" Tp/16=")); Serial.print((float)Tp/16,4);
       Serial.print(F(" Tp="));    Serial.print(Tp);
-      Serial.print(F(" Tpe/16=")); Serial.print((float)Tpe/16,4);
+//      Serial.print(F(" Tpe/16=")); Serial.print((float)Tpe/16,4);
       Serial.print(F(" Tpe="));    Serial.print(Tpe);
+      Serial.print(F(" mode="));    Serial.print(mode);
 }
+
 
 float matchDcmToPv(float Ipp, float IppL, float Vbb, float Vpp, int Tp, int Tt){ // function in unitTestPwmVoltage
       // match load line to pv output  

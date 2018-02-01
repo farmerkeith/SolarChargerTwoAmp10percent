@@ -248,7 +248,7 @@ void unitTestPwmPower (bool flag, unsigned long & Time){
     
     if (testingPwmPower){
       printVVIIdelta(Vbb, Vpp, Ipp, IppL);
-      printTTT(Tt, Tp, Tpe);
+      printTTT(Tt, Tp, Tpe, pwm1.mode);
     }
     if (Vbb>=charger.VbbStartMin-1&&Vbb<=charger.VbbStartMax+3 && \
         Vpp>=charger.VppStartMin-4&&Vpp<=charger.VppStartMax){
@@ -264,7 +264,7 @@ void unitTestPwmPower (bool flag, unsigned long & Time){
     } else {
       if (testingPwmPower){
         Serial.print (" Values_outside_range allowed");
-        printTTT(Tt, Tp, Tpe);
+        printTTT(Tt, Tp, Tpe, pwm1.mode);
 /*        
         Serial.print(F(" Tt/16="));
         Serial.print((float)pwm1.Tt/16,4);
@@ -332,7 +332,7 @@ void unitTestPwmCurrent (bool flag, unsigned long & Time){
     pwm1.Tpe=Tpe;
     if (testingPwmCurrent){
       printVVIIdelta(Vbb, Vpp, Ipp, IppL);
-      printTTT(Tt, Tp, Tpe);
+      printTTT(Tt, Tp, Tpe, pwm1.mode);
     }
     if (Vbb>=charger.VbbStartMin-1&&Vbb<=charger.VbbStartMax+3 && \
         Vpp>=charger.VppStartMin-4&&Vpp<=charger.VppStartMax+3){
@@ -346,7 +346,7 @@ void unitTestPwmCurrent (bool flag, unsigned long & Time){
     } else {
       if (testingPwmCurrent){
         Serial.print (F(" Values_outside allowed_range"));
-        printTTT(Tt, Tp, Tpe);
+        printTTT(Tt, Tp, Tpe, pwm1.mode);
       }
     }
   }
@@ -406,7 +406,7 @@ void unitTestPwmVoltage (bool flag, unsigned long & Time){
     
     if (testingPwmVoltage){
       printVVIIdelta(Vbb, Vpp, Ipp, IppL);
-      printTTT(Tt, Tp, Tpe);
+      printTTT(Tt, Tp, Tpe, pwm1.mode);
     }
     if (Vbb>=charger.VbbStartMin&&Vbb<=charger.VbbStartMax+3 && \
         Vpp>=charger.VppStartMin-4&&Vpp<=charger.VppStartMax){
@@ -420,7 +420,7 @@ void unitTestPwmVoltage (bool flag, unsigned long & Time){
     } else {
       if (testingPwmVoltage){
         Serial.print (F(" Values_outside allowed_range"));
-        printTTT(Tt, Tp, Tpe);
+        printTTT(Tt, Tp, Tpe, pwm1.mode);
       }
     }
   }

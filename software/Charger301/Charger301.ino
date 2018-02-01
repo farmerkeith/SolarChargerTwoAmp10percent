@@ -27,7 +27,7 @@ const bool testingPwmCurrentDelta = 0;  //
 const bool testingPwmPower = 0;  // activates serial print
 const bool testingPwmCurrent = 0;  // activates serial print
 const bool testingPwmVoltage = 0;  // activates serial print
-const bool testingOneLine=1; // 0 removes line feeds in the same cycle
+const bool testingOneLine=0; // 0 removes line feeds in the same cycle
 const bool testingFormatSpacing=0; // 0 removes extra space characters
 
 // hardware configuration constants
@@ -38,9 +38,10 @@ const byte SDpin=10;   // SD/ == Enable pin of IR2184, High, Low or PWM dependin
 const int startupVoltageMargin = 6000; // millivolts. Initiate PWM if Panel voltage is this much higher than Battery voltage
 const int shutDownVoltageMargin = 1000; // millivolts. End PWM if Panel voltage is less than this much higher than Battery voltage
 const int minCurrent = 100;    // milliAmps
-const int startCurrent=500;    // milliAmps
+const int startCurrent=400;    // milliAmps minimum to start
 const int maxStartTime=5000;   // milli seconds
-const int minOffTime=5000;     // milli seconds
+// const int minOffTime=5000;     // milli seconds
+const int minOffTime=1000;     // milli seconds, for testing
 const int maxCurrent = 5000;   // milliAmps
 const int chargerRepeatPeriod = 500; // milliseconds
 
@@ -48,7 +49,7 @@ const int chargerRepeatPeriod = 500; // milliseconds
 const int floatVoltage=12600;  // milliVolts
 const int boostVoltage=14200;  // milliVolts
 //const int boostTimeLimit=3600; // seconds
-const int boostTimeLimit=60; // seconds for testing (1 minutes)
+const int boostTimeLimit=600; // seconds for testing (10 minutes)
 //const int boostTimeReset=3600; // seconds
 const int boostTimeReset=360; // seconds for testing (6 minutes)
 

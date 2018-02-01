@@ -16,7 +16,7 @@ class pwm1 {
   byte filter=4; // filter constant for track
   
   public: // changed for unit testing
-  float L=20;             // microHenries
+  float L=33;  // microHenries
   enum Mode {
     off,
     start,
@@ -53,15 +53,19 @@ bool pwm1::startup(float Vbb, float Vpp, float Ipp){ //
   mode = start;
   // Tp = (Ipp mean)*(2.4*L*Vpp)/((Vpp-Vbb)*Vbb) microseconds
   // Tt = 1.2 * Tp*Vpp/Vbb microseconds
-  Tp  = IppStart*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
+  Tp  = IppStart*2.5*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
   Tpe = Tp+TeStart*16;       // clock cycles // 16 clock cycles per microsecond extension for Te pulse
   Tt  = Tp*Vpp/Vbb * 1.25;    // clock cycles
   setPeriod (Tt);   // 
   setAtime(Tp, Tt); // 
   setBtime(Tpe, Tt); //
+  float IppL = (Vpp-Vbb)*Tp*Tp/32/L/Tt;
+  float Lm = (Vpp-Vbb)*Tp*Tp/32/IppL/Tt;
+//  Serial.print(F("\n pwm line 63 IppL=")); Serial.print(IppL);
+//  Serial.print(" Lm="); Serial.print(Lm);
   // Lm = (Vpp-Vbb)*Tp^2/(2*Tt)/(Ipp mean) 
-  setInductance(Vbb,Vpp,Ipp);
-//  L = (Vpp-Vbb)*Tp*Tp/(2*Tt)/Ipp; 
+//  setInductance(Vbb,Vpp,Ipp);
+  //  L = (Vpp-Vbb)*Tp*Tp/(2*Tt)/Ipp; 
 
   if (pwm1testing){
     // printouts to go with unit test of this function
@@ -189,7 +193,7 @@ bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
 //    Serial.print("\n pwm line 193 mode="); Serial.println(mode);
     
     // printouts to go with unit test of this function
-//    if (pwm1testing) printTTTL(upDown, dutyChange, dcm); 
+    if (pwm1testing) printTTTL(upDown, dutyChange, dcm); 
   } else if (mode==ccm){
     // SDpin is continuously ON 
     // Change in duty = -Vbb/(Vpp*Ipp)*dI
@@ -250,7 +254,8 @@ bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
   if (mode != ccm){
     // Tp = (Ipp mean)*(2.4*L*Vpp)/((Vpp-Vbb)*Vbb) microseconds
     // Tt = 1.25 * Tp*Vpp/Vbb microseconds
-    Tp = Ipp*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
+//    Tp = Ipp*2.4*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
+// keep previous Tp
     Tpe = Tp*Vpp/Vbb;          // clock cycles 
     Tt = (Tpe) * margin;    // clock cycles 
   }
@@ -273,6 +278,11 @@ void pwm1::setInductance(float Vbb, float Vpp, float Ipp){
   if (Ipp>0.1) L = (Vpp-Vbb)*Tp*Tp/Tt/Ipp/32; 
   if (L>100) L=100;
   if (L<20) L=20;
+//  Serial.print(F("\n pwm line 280 Vbb=")); Serial.print(Vbb);
+//  Serial.print(" Vpp="); Serial.print(Vpp);
+//  Serial.print(" Ipp="); Serial.print(Ipp,3);
+//  Lm = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/Ipp/pwm1.Tt;
+//  Serial.print(" L="); Serial.print(L);
 }
 
 bool pwm1::voltage(float Vbb, float Vpp, float Ipp, float target){
