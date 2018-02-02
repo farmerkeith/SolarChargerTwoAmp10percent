@@ -43,8 +43,11 @@ float batteryModel::voltage(float Ibb){ // returns Vbb dependent on SOC and Ibb
 }
 
 void batteryModel::incrementSoc(float Ibb){ // increments soc according to the current
-  soc += Ibb/1000; 
+  soc += Ibb*socChargeFactor;
+  soc -= socDischargeFactor; 
   if (soc>1) soc=1;
+  if (soc<0) soc=0;
+  
 }
 
 class pvModel {
@@ -63,7 +66,7 @@ class pvModel {
   float getVoc (){return Voc;} 
   float getIllumination (){return illumination;}
   
-} pvModel(0.5);
+} pvModel(pvIlluminationFactor);
 
 // constructor
 pvModel::pvModel (float illu){

@@ -38,8 +38,9 @@ class lcd1602 {
   void solarVoltage(float value);
   void solarCurrent(float value);
   void batteryVoltage(float value);
-  void pwm1(float INvalue,float SDvalue, float PWMvalue);
-  void pwm1(String value);
+  void pwm1(float INvalue,float SDvalue, float PWMvalue); // dcm
+  void pwm1(float INvalue, float PWMvalue); // ccm
+  void pwm1(String value); // off state
     
 } lcd1602;
 
@@ -60,40 +61,81 @@ void lcd1602::begin(){
 }
 
 void lcd1602::solarVoltage(float value){
+  byte decimals = 3;
+  if (lcdPwm1) {
+    decimals=1;
+  }
   lcd.setCursor(0,0);
-  lcd.print("P=");
-  lcd.print(value,3);
+  lcd.print("P");
+  lcd.print(value,decimals);
   lcd.print(' ');
 }
 
 void lcd1602::solarCurrent(float value){
-  lcd.setCursor(8,0);
-  lcd.print(" A=");
-  lcd.print(value,3);
+  byte startPos=8;
+  byte decimals = 3;
+  if (lcdPwm1) {
+    decimals=1;
+    startPos=5;
+  }
+  lcd.setCursor(startPos,0);
+  lcd.print(" A");
+  lcd.print(value,decimals);
   lcd.print(' ');
 }
 
 void lcd1602::batteryVoltage(float value){
-  lcd.setCursor(0,1);
-  lcd.print("B=");
-  lcd.print(value,2);
+  byte line=1;
+  byte startPos=0;
+  byte decimals = 3;
+  if (lcdPwm1) {
+    decimals=1;
+    startPos=11;
+    line=0;
+  }
+  lcd.setCursor(startPos,line);
+  lcd.print("B");
+  lcd.print(value,decimals);
   lcd.print(' ');
 }
 
 void lcd1602::pwm1(float INvalue,float SDvalue, float PWMvalue){
-  lcd.setCursor(8,1);
-  lcd.print(INvalue,0);
+  // for dcm
+  byte startPos=8;
+  byte decimals = 0;
+  if (lcdPwm1) {
+    startPos=0;
+    decimals=2;
+  }
+  lcd.setCursor(startPos,1);
+  lcd.print(INvalue,decimals);
   lcd.print(' ');
-  lcd.print(SDvalue,0);
+  lcd.print(SDvalue,decimals);
   lcd.print(' ');
-  lcd.print(PWMvalue,0);
+  lcd.print(PWMvalue,decimals);
+  lcd.print(' ');
+}
+
+void lcd1602::pwm1(float INvalue, float PWMvalue){ 
+  // for ccm
+  byte startPos=8;
+  byte decimals = 2;
+  if (lcdPwm1) {
+    startPos=0;
+    decimals=4;
+  }
+  lcd.setCursor(startPos,1);
+  lcd.print(INvalue,decimals);
+  lcd.print(' ');
+  lcd.print(PWMvalue,decimals);
+  lcd.print(' ');
 }
 
 void lcd1602::pwm1(String value){
   lcd.setCursor(8,1);
   lcd.print("pwm:");
   lcd.print(value);
-  lcd.print(' ');
+  lcd.print("  ");
 }
 
 

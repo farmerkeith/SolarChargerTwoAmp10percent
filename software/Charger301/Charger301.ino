@@ -13,22 +13,26 @@ readVoltsAmps A0Volts(0,0); // instantiates class as object A0Volts on pin A0, 5
 readVoltsAmps A1Amps (1,0); // instantiates class as object A1Amps on pin A1, 5V ref
 readVoltsAmps A2Volts(2,0); // instantiates class as object A2Volts on pin A2, 5V ref
 
-#include "LCD1602AB.h"
-#include "repeatEvery.h"    // associated tab file
-#include "readVoltage.h"    // associated tab file
 
 // test printout configuration constants
-const bool testing = 1;  // 1 for charger class
+const bool lcdPwm1 = 1;  // 1 for detailed pwm display
+const bool testing = 1;  // 1 for charger class testing
 const bool pwm1testing = 1;  // 1 for printing from pwm class
 const bool testingPvModel = 0;  // 
 const bool testingBatteryModel = 0;  // activates serial print
-const bool testingPwmStartup = 0;  // 
+const bool testingPwmStartup = 1;  // 
 const bool testingPwmCurrentDelta = 0;  // 
 const bool testingPwmPower = 0;  // activates serial print
 const bool testingPwmCurrent = 0;  // activates serial print
 const bool testingPwmVoltage = 0;  // activates serial print
 const bool testingOneLine=0; // 0 removes line feeds in the same cycle
 const bool testingFormatSpacing=0; // 0 removes extra space characters
+
+// test model behaviour constants
+const float socChargeFactor = 0.01; // soc increase per amp of Ibb
+const float socDischargeFactor = 0.001; // soc decrease per cycle
+const float pvIlluminationFactor = 0.9; // 0 to 1.00
+
 
 // hardware configuration constants
 const byte INpin = 9;    // main PWM output to IN of IR2184
@@ -49,9 +53,9 @@ const int chargerRepeatPeriod = 500; // milliseconds
 const int floatVoltage=12600;  // milliVolts
 const int boostVoltage=14200;  // milliVolts
 //const int boostTimeLimit=3600; // seconds
-const int boostTimeLimit=600; // seconds for testing (10 minutes)
+const int boostTimeLimit=180; // seconds for testing (3 minutes)
 //const int boostTimeReset=3600; // seconds
-const int boostTimeReset=360; // seconds for testing (6 minutes)
+const int boostTimeReset=180; // seconds for testing (3 minutes)
 
 // voltage and current measurement calibration
 const unsigned long a0fullScale = 30604; // mV, Vpp
@@ -60,6 +64,9 @@ const unsigned long a2fullScale = 30418; // mV, Vbb
 const long a1ZeroScale = 512; // adc code, Ipp
 
 
+#include "LCD1602AB.h"
+#include "repeatEvery.h"    // associated tab file
+#include "readVoltage.h"    // associated tab file
 #include "pwm.h"                // associated tab file
 #include "testModels.h"         // associated tab file
 #include "charger.h"            // associated tab file
@@ -102,10 +109,10 @@ void setup() {
 void loop() {
 //  repeatEvery(2000, readVoltsAndAmps);
   repeatEvery(10000, countLoops);
-  repeatEvery(chargerRepeatPeriod, chargerRun);
+//  repeatEvery(chargerRepeatPeriod, chargerRun);
 //  repeatEvery(500, unitTestPvModel);
 //  repeatEvery(500, unitTestBatteryModel);
-//  repeatEvery(500, unitTestPwmStartup);
+  repeatEvery(5000, unitTestPwmStartup);
 //  repeatEvery(500, unitTestPwmCurrentDelta);
 //  repeatEvery(500, unitTestPwmPower);
 //  repeatEvery(500, unitTestPwmCurrent);

@@ -29,6 +29,7 @@ class charger {
   float Ipp=0;
   float Vbb=12;
   long boostTime=0; // seconds. Time spent in boost state per day
+//  long offTime=0; // seconds. Time spent in off state
   unsigned long timer = 0;
   public:
   void run();
@@ -51,6 +52,7 @@ class charger {
   void runCurrentLimitedBoost();
   void printState(State currentState);
   void incrementBoostTime();
+//  void incrementOffTime();
   public:
   bool unitTest(float Vb, float Vp,float Ip);
 } charger;
@@ -119,8 +121,8 @@ void charger::run(){
     Vbb = battery.voltage(Ipp*Vpp/Vbb);
     battery.incrementSoc(Ipp); 
 
-  float IppL = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/pwm1.L/pwm1.Tt;
-  float Lm = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/IppL/pwm1.Tt;
+    float IppL = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/pwm1.L/pwm1.Tt;
+    float Lm = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/IppL/pwm1.Tt;
 /*  
   Serial.print(F("\n charger line 120 IppL=")); Serial.print(IppL,3);
   Serial.print(" Lm="); Serial.print(Lm);
@@ -186,6 +188,12 @@ void charger::run(){
   lcd1602.solarVoltage(Vpp);
   lcd1602.solarCurrent(Ipp);
   lcd1602.batteryVoltage(Vbb);
+  if (currentState==off){
+    lcd1602.pwm1("off ");
+  } else {
+    if (pwm1.mode==3) lcd1602.pwm1(pwm1.readAtime(), pwm1.readPeriod());
+    else lcd1602.pwm1(pwm1.readAtime(), pwm1.readBtime() ,pwm1.readPeriod());
+  }
   if (testing){
     Serial.print (F("\n charger::run exit "));
     printVVIIdelta(Vbb, Vpp, Ipp, 0);
@@ -217,6 +225,16 @@ void charger::runOff(){
     A1Amps.calibrateZeroAmps(Ipp1/100);
 //    Serial.print(F("Calibration")); Serial.println(Ipp1);
   } else { // minimum off time expired
+    if (boostTime!=0){
+//      Serial.print (F("\n charger line 229 timer=")); Serial.print (timer);
+//      Serial.print (F(" millis - timer=")); Serial.print (millis()-timer);
+//      Serial.print (F(" boostTimeReset*1000=")); Serial.print ((long)boostTimeReset*1000);;
+      
+      if ((long)(millis()-timer)>(long)boostTimeReset*1000) {
+        boostTime = 0; // reset boost timer
+        if (testing) Serial.print (F("\n boost Time reset"));
+      }
+    }
     if (testing){
       // if ((Vpp - Vbb)*1000>=startupVoltageMargin) currentState=start;
       // same as normal test
@@ -243,7 +261,7 @@ void charger::goToStart(){
   // also updates inductance L
 //  Timer1Fast.startPwm(INpin, 65536*INduration/pwmPeriod,0); 
 //  Timer1Fast.startPwm(SDpin, 65536*SDduration/pwmPeriod,0); 
-  lcd1602.pwm1(pwm1.readAtime(), pwm1.readBtime() ,pwm1.readPeriod());
+//  lcd1602.pwm1(pwm1.readAtime(), pwm1.readBtime() ,pwm1.readPeriod());
 }
 
 void charger::runStart(){
@@ -452,5 +470,9 @@ void charger::incrementBoostTime(){
   timer=millis();
 }
 
+// void charger::incrementOffTime(){
+//    offTime += (long)(millis()-timer); // increment offTime
+//  timer=millis();
+// }
 
 

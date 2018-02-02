@@ -110,6 +110,10 @@ void unitTestPwmStartup (bool flag, unsigned long & Time){
         Serial.print (" Values outside range allowed");
       }
     }
+    lcd1602.solarVoltage(Vpp);
+    lcd1602.solarCurrent(Ipp);
+    lcd1602.batteryVoltage(Vbb);
+    lcd1602.pwm1(pwm1.readAtime(), pwm1.readBtime() ,pwm1.readPeriod());
   }
   Time = lastTime;
 }
