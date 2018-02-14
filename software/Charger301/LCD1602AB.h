@@ -10,12 +10,10 @@
 //row 1    'P' '=' Vpp = '.' Vpp =  =  Space 'A'  = Ipp '.' Ipp =  =
 //row 2    'B' '=' Vbb = '.' Vbb =  =  Space "pwm="         "off" 
 
-// run screen start state
+// run screen dcm mode
 //character 0   1  2   3  4  5   6  7     8      9  10    11   12  13     14    15 
 //row 1    'P' '=' Vpp = '.' Vpp =  =     Space 'A' =     Ipp '.'  Ipp    =      =
 //row 2    'B' '=' Vbb = '.' Vbb =  Space D9     D9 space D10  D10 space  Period = 
-
-int x=2;
 
 #include <Wire.h>
 #include <LCD.h>
@@ -38,9 +36,9 @@ class lcd1602 {
   void solarVoltage(float value);
   void solarCurrent(float value);
   void batteryVoltage(float value);
-  void pwm1(float INvalue,float SDvalue, float PWMvalue); // dcm
-  void pwm1(float INvalue, float PWMvalue); // ccm
-  void pwm1(String value); // off state
+  void pwm1(float INvalue,float SDvalue, float PWMvalue); // used for dcm
+  void pwm1(float INvalue, float PWMvalue); // used for ccm
+  void pwm1(String value); // used for off state
     
 } lcd1602;
 
@@ -62,7 +60,7 @@ void lcd1602::begin(){
 
 void lcd1602::solarVoltage(float value){
   byte decimals = 3;
-  if (lcdPwm1) {
+  if (lcdPwm1) { // global configuration constant
     decimals=1;
   }
   lcd.setCursor(0,0);

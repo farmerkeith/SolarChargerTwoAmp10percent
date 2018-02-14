@@ -20,7 +20,7 @@ class batteryModel{
   void incrementSoc(float Ibb); // increments soc according to the current
   float readSoc(){return soc;}
   
-}  battery(0.5);
+}  battery(initialSoc);
 
 batteryModel::batteryModel(float s){ // constructor
   setSoc(s);
@@ -110,6 +110,12 @@ float pvModel::current (float Vpp){
 }
 //-----------------end of class definitions ---------
 
+void printChargerHeader(long boostTime){
+    Serial.print (F(" pv illumination=")); Serial.print(pvModel.getIllumination());
+    Serial.print (F(" battery SOC=")); Serial.print(battery.readSoc());
+    Serial.print (F(" boost time=")); Serial.print((float)boostTime/1000);
+}
+
 void printVVIIdelta(float Vbb, float Vpp, float Ipp, float IppL){
   if (testingOneLine) Serial.print ("\n");
   Serial.print (F(" Vbb=")); Serial.print(Vbb,4);
@@ -137,13 +143,13 @@ float matchDcmToPv(float Ipp, float IppL, float Vbb, float Vpp, int Tp, int Tt){
       if (IppL>Ipp){
         while(IppL>Ipp){
           Vpp -= 0.0001;
-          IppL = (Vpp-Vbb)/pwm1.L*Tp*Tp/32/Tt;
+          IppL = (Vpp-Vbb)/pwm.L*Tp*Tp/32/Tt;
           Ipp=pvModel.current(Vpp);
         }
       } else if (Ipp>IppL){
         while(Ipp>IppL){
           Vpp += 0.0001;
-          IppL = (Vpp-Vbb)/pwm1.L*Tp*Tp/32/Tt;
+          IppL = (Vpp-Vbb)/pwm.L*Tp*Tp/32/Tt;
           Ipp=pvModel.current(Vpp);
         }
       }

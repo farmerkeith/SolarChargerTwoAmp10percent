@@ -10,30 +10,22 @@ class charger {
   public:
   const float VppStartMin=16;   // V
   const float VppStartMax=28;   // V
-  const float VbbStartMin=11.5; // mV
-  const float VbbStartMax=12.6; // mV
+  const float VbbStartMin=11.2; // V
+  const float VbbStartMax=12.6; // V
   
   enum State {
-    off,
-    start,
-    bulk,
-    floatV,
-    boost,
-    boostFloat,
-    currentLimitedFloat,
-    currentLimitedBoost
+    off, start, bulk, floatV, boost, boostFloat,
+    currentLimitedFloat, currentLimitedBoost
   };
+  
   State currentState=off;
   State lastState=start; // could be any state other than off
-  float Vpp=12;
-  float Ipp=0;
-  float Vbb=12;
+  float Vbb=12, Vpp=12, Ipp=0;
   long boostTime=0; // seconds. Time spent in boost state per day
-//  long offTime=0; // seconds. Time spent in off state
   unsigned long timer = 0;
   public:
   void run();
-  private:
+//  private:
   void goToOff(); 
   void goToStart();
   void goToBulk();
@@ -52,7 +44,6 @@ class charger {
   void runCurrentLimitedBoost();
   void printState(State currentState);
   void incrementBoostTime();
-//  void incrementOffTime();
   public:
   bool unitTest(float Vb, float Vp,float Ip);
 } charger;
@@ -61,93 +52,46 @@ void chargerRun (bool flag, unsigned long & Time){
   static unsigned long lastTime;
   if (flag) {
     lastTime=Time;
-    Serial.print (F("\nChargerRun fn at time "));
-    Serial.print ((float)millis()/1000,3);
-
-    charger.run();
-    
-/*
-    Serial.print (" Vpp= ");
-    Serial.print(Vpp,3);
-    Serial.print (" Ipp= ");
-    Serial.print(Ipp,3);
-    Serial.print (" Vbb= ");
-    Serial.println(Vbb,3);
-*/    
+    if (unitTestingActive==0){
+      Serial.print (F("\nChargerRun fn at time "));
+      Serial.print ((float)millis()/1000,3);
+      charger.run();
+    }
   }
   Time = lastTime;
 }
 
-
 void charger::run(){
 //  Serial.print("\n line 81 Vpp="); Serial.print(Vpp);
   printState(currentState);
-  if (testing) {
-    Serial.print (F(" pv illumination=")); Serial.print(pvModel.getIllumination());
-    Serial.print (F(" battery SOC=")); Serial.print(battery.readSoc());
-    Serial.print (F(" boost time=")); Serial.print((float)boostTime/1000);
-    Serial.print (F("\n charger::run entry"));
-    printVVIIdelta(Vbb, Vpp, Ipp, 0);
-    printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
-    Serial.println();
+  if (testing) { // debug printing
+    printChargerHeader(boostTime);
+//    Serial.print (F("\n charger::run entry"));
+//    printVVIIdelta(Vbb, Vpp, Ipp, 0);
+//    printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
+//    Serial.println();
   }
-//  Serial.print("\n line 87 run, Vpp="); Serial.println(Vpp);
-    
-//  Serial.print("\n currentState="); Serial.print(currentState);
-//  Serial.print("\n pwm Mode="); Serial.print(pwm1.mode);
 
   if (testing){
     if (currentState==off) Vpp = pvModel.getVoc(); // only for off state
-    else if (pwm1.mode==2||pwm1.mode==1){ // dcm or start
-      float IppL = (Vpp-Vbb)/pwm1.L*pwm1.Tp*pwm1.Tp/32/pwm1.Tt;
-      Vpp = matchDcmToPv(Ipp, IppL, Vbb, Vpp, pwm1.Tp, pwm1.Tt);
-//      Serial.print("\n line 98 Vpp1="); Serial.print(Vpp1);
-    } else if (pwm1.mode==3){ // ccm
-      Vpp = Vbb * pwm1.Tt/pwm1.Tp;
-      
-/*      
-      Serial.print("\n line 101 Vpp="); Serial.print(Vpp);
-      Serial.print(" Vbb="); Serial.print(Vbb);
-      Serial.print(" Tt="); Serial.print(pwm1.Tt);
-      Serial.print(" Tp="); Serial.println(pwm1.Tp);
-*/      
+    else if (pwm.mode==2||pwm.mode==1){ // dcm or start
+      float IppL = (Vpp-Vbb)/pwm.L*pwm.Tp*pwm.Tp/32/pwm.Tt;
+      Vpp = matchDcmToPv(Ipp, IppL, Vbb, Vpp, pwm.Tp, pwm.Tt);
+    } else if (pwm.mode==3){ // ccm
+      Vpp = Vbb * pwm.Tt/pwm.Tp;
     }
     
-//  Serial.print("\n line 104 run, Vpp="); Serial.println(Vpp);
-//    Serial.print("\n line 98 pwm1.Tt="); Serial.print(pwm1.Tt);
-//    Serial.print(" pwm1.Tp="); Serial.print(pwm1.Tp);
-//    Serial.print("\n line 100 Vpp="); Serial.print(Vpp);
     Ipp = pvModel.current(Vpp);
     Vbb = battery.voltage(Ipp*Vpp/Vbb);
     battery.incrementSoc(Ipp); 
 
-    float IppL = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/pwm1.L/pwm1.Tt;
-    float Lm = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/IppL/pwm1.Tt;
-/*  
-  Serial.print(F("\n charger line 120 IppL=")); Serial.print(IppL,3);
-  Serial.print(" Lm="); Serial.print(Lm);
-  Serial.print(F("\n charger line 122 Vbb=")); Serial.print(Vbb);
-  Serial.print(" Vpp="); Serial.print(Vpp);
-  Serial.print(" Ipp="); Serial.print(Ipp,3);
-  Lm = (Vpp-Vbb)*pwm1.Tp*pwm1.Tp/32/Ipp/pwm1.Tt;
-  Serial.print(" Lm="); Serial.print(Lm);
-*/
-/*    
-    if (currentState==off){
-      ++Vpp;  // artificial value for testing
-      Vbb=12; // artificial value for testing
-    } else{
-      Vpp-=0.5; // artificial value for testing
-      Vbb=12;   // artificial value for testing
-    }
-*/    
-  } else {
+    float IppL = (Vpp-Vbb)*pwm.Tp*pwm.Tp/32/pwm.L/pwm.Tt;
+    float Lm = (Vpp-Vbb)*pwm.Tp*pwm.Tp/32/IppL/pwm.Tt;
+  } else { // not testing
     Vpp = A0Volts.getVolts(); // returns (float) Volts
     Vbb = A2Volts.getVolts(); // returns (float) Volts
     Ipp = A1Amps.getAmps(); // returns (float) Amps
   }
-//  Serial.print(F("Ipp="));   Serial.println(Ipp,3);
-
   switch (currentState){
   case off:
     if(lastState!=off) goToOff();
@@ -166,7 +110,6 @@ void charger::run(){
     else runFloatV();
   break;
   case boost:
-//    Serial.print("\n charger Line 135 caseBoost Vpp="); Serial.print(Vpp);
     if(lastState!=boost) goToBoost();
     else runBoost();
   break;
@@ -191,15 +134,16 @@ void charger::run(){
   if (currentState==off){
     lcd1602.pwm1("off ");
   } else {
-    if (pwm1.mode==3) lcd1602.pwm1(pwm1.readAtime(), pwm1.readPeriod());
-    else lcd1602.pwm1(pwm1.readAtime(), pwm1.readBtime() ,pwm1.readPeriod());
+    if (pwm.mode==3) lcd1602.pwm1(pwm.readAtime(), pwm.readPeriod());
+    else lcd1602.pwm1(pwm.readAtime(), pwm.readBtime() ,pwm.readPeriod());
   }
-  if (testing){
-    Serial.print (F("\n charger::run exit "));
-    printVVIIdelta(Vbb, Vpp, Ipp, 0);
-    printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
-    Serial.println();
-  }
+  
+//  if (testing){
+//    Serial.print (F("\n charger::run exit "));
+//    printVVIIdelta(Vbb, Vpp, Ipp, 0);
+//    printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
+//    Serial.println();
+//  }
 }
 
 void charger::goToOff(){
@@ -253,11 +197,11 @@ void charger::goToStart(){
 //  Serial.print(F("\ncharger line 223: goToStart, Ipp="));Serial.print(Ipp);
 //  Serial.print(F(" L="));Serial.print(pwm1.L);
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   lastState=start;  
   timer = millis();
   // set up pwm for start state re-Done
-  pwm1.startup(Vbb,Vpp,Ipp); // set up pwm to initiate charging
+  pwm.startup(Vbb,Vpp,Ipp); // set up pwm to initiate charging
   // also updates inductance L
 //  Timer1Fast.startPwm(INpin, 65536*INduration/pwmPeriod,0); 
 //  Timer1Fast.startPwm(SDpin, 65536*SDduration/pwmPeriod,0); 
@@ -268,15 +212,15 @@ void charger::runStart(){
 //  Serial.print(F("\ncharger line 238: runStart, Ipp="));Serial.print(Ipp);
 //  Serial.print(F(" L="));Serial.print(pwm1.L);
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   if (testing){
-    // IppL = (Vpp-Vbb)/pwm1.L*Tp*Tp/32/Tt;
-    // Vpp=Vbb*pwm1.Tt/pwm1.Tp;
-//    Vpp=19.5;
+    // IppL = (Vpp-Vbb)/pwm.L*Tp*Tp/32/Tt;
+    // Vpp=Vbb*pwm1.Tt/pwm.Tp;
+    //    Vpp=19.5;
     // Vpp=pvModel.getVoc()-0.65;
-//    Serial.print("\n charger Line 195 Vpp="); Serial.print(Vpp);
+    //    Serial.print("\n charger Line 195 Vpp="); Serial.print(Vpp);
     Ipp=pvModel.current(Vpp);
-//    Serial.print("\n line 212  Ipp="); Serial.print(Ipp);
+    //    Serial.print("\n line 212  Ipp="); Serial.print(Ipp);
     //    if ((Vpp - Vbb)*1000<=shutDownVoltageMargin) currentState=off;
   } 
   // else {
@@ -286,12 +230,12 @@ void charger::runStart(){
     // transition to next state based on Ipp >= startCurrent
     // startCurrent is global constant in mA, set to 200 milli Amps
     
-    if ((long)(millis()-timer)>maxStartTime) currentState=off;
-    if (Ipp*1000>=startCurrent){
+    if ((long)(millis()-timer)>maxStartTime) currentState=off; // startup fail
+    if (Ipp*1000>=startCurrent){ // startup success
       if(Vbb*1000<floatVoltage) currentState=bulk;
       else if (boostTime/1000<boostTimeLimit) currentState=boost;
       else currentState=floatV;
-      pwm1.setInductance(Vbb,Vpp,Ipp); // 
+      pwm.setInductance(Vbb,Vpp,Ipp); // 
     }
 //  }
 }
@@ -300,10 +244,10 @@ void charger::goToBulk(){
 //  Serial.print("\n charger Line 272 goToBulk Ipp="); Serial.print(Ipp);
 //  Serial.print(F(" L="));Serial.print(pwm1.L);
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   lastState=bulk;
   // set up pwm for bulk state
-  pwm1.initPower(Vbb,Vpp,Ipp); // set up pwm for MPPT (under float voltage?)
+  pwm.initPower(Vbb,Vpp,Ipp); // set up pwm for MPPT (under float voltage?)
 }
 
 void charger::runBulk(){
@@ -311,17 +255,17 @@ void charger::runBulk(){
 //  Serial.print("\n charger Line 229 Vbb*pwm1.Tpe/pwm1.Tp="); 
 //  Serial.print(Vbb*pwm1.Tpe/pwm1.Tp);
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   if (testing){
     Ipp=pvModel.current(Vpp);
   }
-  pwm1.power(Vbb, Vpp, Ipp); 
+  pwm.power(Vbb, Vpp, Ipp); 
 //  Serial.print ("\n Mode="); Serial.print(pwm1.mode);
-  if (pwm1.mode==2){
-    float IppL = (Vpp-Vbb)/pwm1.L*pwm1.Tp*pwm1.Tp/32/pwm1.Tt;
-    Vpp = matchDcmToPv(Ipp, IppL, Vbb, Vpp, pwm1.Tp, pwm1.Tt);
-  } else if (pwm1.mode==3){
-    Vpp = Vbb * pwm1.Tt/pwm1.Tp;
+  if (pwm.mode==2){
+    float IppL = (Vpp-Vbb)/pwm.L*pwm.Tp*pwm.Tp/32/pwm.Tt;
+    Vpp = matchDcmToPv(Ipp, IppL, Vbb, Vpp, pwm.Tp, pwm.Tt);
+  } else if (pwm.mode==3){
+    Vpp = Vbb * pwm.Tt/pwm.Tp;
   }
 //  Serial.print("\n charger Line 244 Vpp="); Serial.println(Vpp);
 //  Vpp = Vpp1;
@@ -338,15 +282,15 @@ void charger::runBulk(){
 
 void charger::goToFloatV(){
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  pwm1.setDcm();
+  pwm.setDcm();
   lastState=floatV;
   // ToDo set up pwm for floatV state
 }
 void charger::runFloatV(){
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   // algorithm to keep Vbb at floatVoltage
-  pwm1.voltage(Vbb, Vpp, Ipp, (float)floatVoltage/1000);  
+  pwm.voltage(Vbb, Vpp, Ipp, (float)floatVoltage/1000);  
   if (Ipp*1000<=minCurrent) currentState=off;
   if (Vbb*1000 < floatVoltage) currentState=bulk;
 }
@@ -359,19 +303,19 @@ void charger::goToBoost(){
   lastState=boost;
   timer=millis(); // for measuring time in boost state
   // set up pwm for boost state
-  pwm1.initPower(Vbb,Vpp,Ipp); // set up pwm for MPPT (under float voltage?)
+  pwm.initPower(Vbb,Vpp,Ipp); // set up pwm for MPPT (under float voltage?)
 //  Serial.print("\n charger Line 295 goToBoost Vpp="); Serial.print(Vpp);
 }
 
 void charger::runBoost(){
 //  Serial.print("\n line 318 runBoost, Vpp="); Serial.println(Vpp);
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
 //  Serial.print("\n charger Line 299 runBoost Vpp="); Serial.print(Vpp);
   incrementBoostTime();
 //  Serial.print("\n charger Line 301 runBoost boostTime="); Serial.print(boostTime/1000);
   // run MPPT algorithm
-  pwm1.power(Vbb, Vpp, Ipp);  
+  pwm.power(Vbb, Vpp, Ipp);  
   if (Ipp*1000<=minCurrent) currentState=off;
   if (Ipp*1000>maxCurrent) currentState=currentLimitedBoost;
 //  Serial.print(F("\n charger line 330 boostTime/1000=")); Serial.print (boostTime/1000);
@@ -389,17 +333,17 @@ void charger::goToBoostFloat(){
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
   timer=millis() -chargerRepeatPeriod;
   incrementBoostTime();
-  pwm1.setDcm();
+  pwm.setDcm();
   lastState=boostFloat;
   timer=millis();
   // set up pwm for boostFloat state
 }
 void charger::runBoostFloat(){
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   incrementBoostTime();
   // algorithm to keep Vbb at boostVoltage
-  pwm1.voltage(Vbb, Vpp, Ipp, (float)boostVoltage/1000);  
+  pwm.voltage(Vbb, Vpp, Ipp, (float)boostVoltage/1000);  
 //  constantVoltageAlgorithm(boostVoltage);
   if (Ipp*1000<=minCurrent) currentState=off;
   if (boostTime/1000>boostTimeLimit) {
@@ -415,9 +359,9 @@ void charger::goToCurrentLimitedFloat(){
 }
 void charger::runCurrentLimitedFloat(){
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   // ToDo algorithm to keep Ipp at maxCurrent
-  pwm1.current(Vbb, Vpp, Ipp, (float)maxCurrent/1000);  
+  pwm.current(Vbb, Vpp, Ipp, (float)maxCurrent/1000);  
 //  constantCurrentAlgorithm(maxCurrent);
   if (Ipp*1000<=minCurrent) currentState=off;
   if (Ipp*1000<maxCurrent) currentState=bulk;
@@ -438,9 +382,9 @@ void charger::goToCurrentLimitedBoost(){
 void charger::runCurrentLimitedBoost(){
   incrementBoostTime();
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
-  if (testing) printTTT(pwm1.Tt, pwm1.Tp, pwm1.Tpe, pwm1.mode);
+  if (testing) printTTT(pwm.Tt, pwm.Tp, pwm.Tpe, pwm.mode);
   // algorithm to keep Ipp at maxCurrent
-  pwm1.current(Vbb, Vpp, Ipp, (float)maxCurrent/1000);  
+  pwm.current(Vbb, Vpp, Ipp, (float)maxCurrent/1000);  
   if (Ipp*1000<=minCurrent) currentState=off;
   if (Ipp*1000<maxCurrent) currentState=boost;
   else if (Vbb*1000>=boostVoltage) currentState=boostFloat;

@@ -3,7 +3,7 @@
 // libraries
 #include "Timer1Fast.h"
 
-class pwm1 {
+class pwm {
   const float IppStart=0.5;     // mA
   const float TeStart=1;        // microseconds
   const int minTp = 16;
@@ -47,16 +47,17 @@ class pwm1 {
   float readPeriod(){return (float)Tt/16;}
   void enableDriver();
   
-} pwm1;
+} pwm;
 
-bool pwm1::startup(float Vbb, float Vpp, float Ipp){ // 
+bool pwm::startup(float Vbb, float Vpp, float Ipp){ // 
   mode = start;
   // Tp = (Ipp mean)*(2.4*L*Vpp)/((Vpp-Vbb)*Vbb) microseconds
   // Tt = 1.2 * Tp*Vpp/Vbb microseconds
   Tp  = IppStart*2.5*L*Vpp/((Vpp-Vbb)*Vbb)*16; // clock cycles
   Tpe = Tp+TeStart*16;       // clock cycles // 16 clock cycles per microsecond extension for Te pulse
   Tt  = Tp*Vpp/Vbb * 1.25;    // clock cycles
-  setPeriod (Tt);   // 
+  Timer1Fast.initializeFastCycles(Tt);
+//  setPeriod (Tt);   // 
   setAtime(Tp, Tt); // 
   setBtime(Tpe, Tt); //
   float IppL = (Vpp-Vbb)*Tp*Tp/32/L/Tt;
@@ -82,35 +83,36 @@ bool pwm1::startup(float Vbb, float Vpp, float Ipp){ //
   }
 }
 
-void pwm1::setPeriod(int period){
-  Timer1Fast.setPeriodMicroseconds(period/16);
-  while (period%16) {
-    Timer1Fast.incrementPeriod();
-    -- period;
-  }
+void pwm::setPeriod(int period){
+  Timer1Fast.setPeriodClockCycles(period);
+//  while (period%16) {
+//    Timer1Fast.incrementPeriod();
+//    -- period;
+//  }
 }
 
-void pwm1::setAtime(unsigned long Atime, int period){ // clock cycles, takes any integer values
+void pwm::setAtime(unsigned long Atime, int period){ // clock cycles, takes any integer values
   unsigned long duty = (Atime<<16)/period;
   Timer1Fast.setPwmDuty(INpin, duty);
 }
 
-void pwm1::setBtime(unsigned long Btime, int period){ // clock cycles, takes any integer values
+void pwm::setBtime(unsigned long Btime, int period){ // clock cycles, takes any integer values
   unsigned long duty = (Btime<<16)/period;
   Timer1Fast.setPwmDuty(SDpin, duty);
 }
 
-void pwm1::enableDriver(){
+void pwm::enableDriver(){
   digitalWrite (SDpin, HIGH);
 }
 
-void pwm1::printTTTL(bool upDown, int dutyChange, Mode mode){
+void pwm::printTTTL(bool upDown, int dutyChange, Mode mode){
   String ud;
   if(upDown) ud="up"; else ud="dn";
   String md;
   if(mode==dcm) md="dcm"; 
   else if (mode==ccm) md="ccm";
   else md="unk";
+  if (testingOneLine) Serial.print("\n");
   Serial.print(" current " + ud + ", " + md + ": dutyChange=");
   Serial.print(dutyChange);
   if (testingFormatSpacing) Serial.print(F("     "));
@@ -123,7 +125,7 @@ void pwm1::printTTTL(bool upDown, int dutyChange, Mode mode){
   Serial.print(" L="); Serial.print(L);
 }
 
-int pwm1::setDutyChange(bool upDown, Mode mode, float Vbb, float Vpp){
+int pwm::setDutyChange(bool upDown, Mode mode, float Vbb, float Vpp){
   //  int dutyChange=1; // minimum value for initial testing
   //  if (upDown==0) dutyChange = -dutyChange;
   int dutyChange=8; // reduce this when close to MPP
@@ -146,7 +148,7 @@ int pwm1::setDutyChange(bool upDown, Mode mode, float Vbb, float Vpp){
   return dutyChange;
 }
 
-bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
+bool pwm::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
   // ccm:
   // In ccm, to increase current we have to decrease voltage which is Vbb*duty.
   // decrease Tp relative to Tt to increase current
@@ -216,7 +218,7 @@ bool pwm1::IppDelta(float Vbb,float Vpp,float Ipp, bool upDown){
   if (pwm1testing) printTTTL(upDown, dutyChange, mode); 
 }
 
-bool pwm1::power(float Vbb, float Vpp, float Ipp){
+bool pwm::power(float Vbb, float Vpp, float Ipp){
   // maximise power
   // if (newPower >= oldPower) continue in same direction
   // else reverse direction
@@ -234,7 +236,7 @@ bool pwm1::power(float Vbb, float Vpp, float Ipp){
 //  Serial.print("\n pwm line 231 power, Vpp="); Serial.println(Vpp);
 }
 
-bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
+bool pwm::initPower(float Vbb, float Vpp, float Ipp){
   //  Serial.println(F("\n init power function"));
   // coming from startup
   // set up pwm in dcm
@@ -273,7 +275,7 @@ bool pwm1::initPower(float Vbb, float Vpp, float Ipp){
   setBtime(Tpe, Tt); //
 }
 
-void pwm1::setInductance(float Vbb, float Vpp, float Ipp){
+void pwm::setInductance(float Vbb, float Vpp, float Ipp){
   // works provided mode==dcm
   if (Ipp>0.1) L = (Vpp-Vbb)*Tp*Tp/Tt/Ipp/32; 
   if (L>100) L=100;
@@ -285,7 +287,7 @@ void pwm1::setInductance(float Vbb, float Vpp, float Ipp){
 //  Serial.print(" L="); Serial.print(L);
 }
 
-bool pwm1::voltage(float Vbb, float Vpp, float Ipp, float target){
+bool pwm::voltage(float Vbb, float Vpp, float Ipp, float target){
   // manage pwm to maintain Vbb at target
   // keep Vbb at the target
   // if Vbb is too high, reduce Ibb;
@@ -313,7 +315,7 @@ bool pwm1::voltage(float Vbb, float Vpp, float Ipp, float target){
 */  
 }
 
-bool pwm1::current(float Vbb, float Vpp, float Ipp, float target){
+bool pwm::current(float Vbb, float Vpp, float Ipp, float target){
   // manage pwm to maintain Ipp at target
   IppDelta(Vbb,Vpp,Ipp, Ipp<target); 
   // Ipp<target is 1 to increase current, 0 to reduce it
