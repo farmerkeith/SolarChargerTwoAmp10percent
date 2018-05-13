@@ -15,9 +15,9 @@ readVoltsAmps A2Volts(2,0); // instantiates class as object A2Volts on pin A2, 5
 
 
 // test printout configuration constants
-const bool lcdPwm1 = 1;  // 1 for detailed pwm display
-const bool testing = 1;  // 1 for serial printing from charger class while testing
-const bool pwm1testing = 1;  // 1 for serial printing from pwm class while testing
+const bool lcdPwm1 = 0;  // 1 for detailed pwm display
+const bool testing = 0;  // 1 for serial printing from charger class while testing
+const bool pwm1testing = 0;  // 1 for serial printing from pwm class while testing
 const bool testingOneLine=1; // 0 removes line feeds in the same cycle
 const bool testingFormatSpacing=1; // 0 removes extra space characters
 

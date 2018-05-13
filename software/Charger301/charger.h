@@ -71,7 +71,7 @@ void chargerRun (bool flag, unsigned long & Time){
 }
 
 void charger::run(){
-//  Serial.print("\n line 81 Vpp="); Serial.print(Vpp);
+  //  Serial.print("\n line 74 Vpp="); Serial.print(Vpp);
   printState(currentState);
   if (testing) { // debug printing
     printChargerHeader(boostTime);
@@ -192,14 +192,14 @@ void charger::goToOff(){
 }
 
 void charger::runOff(){
-//  Serial.print(F("\ncharger line 188: runOff, Ipp="));Serial.print(Ipp);
+//  Serial.print(F("\ncharger line 197: runOff, Ipp="));Serial.println(Ipp);
 //  Serial.print(F(" L="));Serial.print(pwm1.L);
 //  Serial.print(F(" timer="));Serial.print(timer);
 //  Serial.print(F(" minOffTime="));Serial.println(minOffTime);
   if (testing) printVVIIdelta(Vbb, Vpp, Ipp, 0);
   long Ipp1=A1Amps.getVoltCode(20);
   A1Amps.calibrateZeroAmps(Ipp1/100);
-  if (testing) Serial.print(F("\n Current calibration")); Serial.println(Ipp1);
+  if (testing) {Serial.print(F("\n Current calibration")); Serial.println(Ipp1);}
   if (boostTime!=0){
 //      Serial.print (F("\n charger line 229 timer=")); Serial.print (timer);
 //      Serial.print (F(" millis - timer=")); Serial.print (millis()-timer);
@@ -209,6 +209,7 @@ void charger::runOff(){
       if (testing) Serial.print (F("\n boost Time reset"));
     }
   }
+//  Serial.print(F("\ncharger line 214: runOff, Ipp="));Serial.print(Ipp);
 }
 
 void charger::stateAfterStart(){

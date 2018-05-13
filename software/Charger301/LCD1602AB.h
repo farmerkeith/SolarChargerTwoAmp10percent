@@ -19,6 +19,7 @@
 #include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C  lcd(0x27,2,1,0,4,5,6,7); // 0x27 is the I2C bus address for an unmodified backpack
+// LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
 class lcd1602 {
   public:
@@ -49,12 +50,14 @@ lcd1602::lcd1602() {
 // project-specific functions
 
 void lcd1602::begin(){
+//  lcd.begin(20, 4);
   lcd.begin(16, 2);
   lcd.setBacklightPin(3,0);
-  lcd.setBacklight(0);
+//  lcd.setBacklight(1); // for 2004
+  lcd.setBacklight(0); // for 1602
   lcd.clear();
   lcd.home() ;
-  lcd.print("Charger301");
+  lcd.print("Charger 301");
   pwm1("off");
 }
 
